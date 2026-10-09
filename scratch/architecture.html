@@ -1,0 +1,371 @@
+<title>Interview Prep System Architecture</title>
+<style>
+  :root {
+    --bg: #f1f3f5;
+    --surface: #ffffff;
+    --border: #d3d9df;
+    --text: #1c2530;
+    --text-dim: #57646f;
+    --amber: #a86a1e;
+    --amber-bg: #fbf1e2;
+    --amber-border: #e0b877;
+    --teal: #1f6f68;
+    --teal-bg: #e7f3f1;
+    --teal-border: #7fbdb4;
+    --neutral-bg: #eef0f2;
+    --neutral-border: #b8c1c9;
+    --accent-line: #1c2530;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12161c;
+      --surface: #1a2029;
+      --border: #303a45;
+      --text: #e8ecef;
+      --text-dim: #a3adb6;
+      --amber: #e0a352;
+      --amber-bg: #2c2218;
+      --amber-border: #6b4f22;
+      --teal: #6fcfc4;
+      --teal-bg: #17272a;
+      --teal-border: #2c5751;
+      --neutral-bg: #1f2731;
+      --neutral-border: #3a4552;
+      --accent-line: #e8ecef;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12161c;
+    --surface: #1a2029;
+    --border: #303a45;
+    --text: #e8ecef;
+    --text-dim: #a3adb6;
+    --amber: #e0a352;
+    --amber-bg: #2c2218;
+    --amber-border: #6b4f22;
+    --teal: #6fcfc4;
+    --teal-bg: #17272a;
+    --teal-border: #2c5751;
+    --neutral-bg: #1f2731;
+    --neutral-border: #3a4552;
+    --accent-line: #e8ecef;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Source Sans 3", system-ui, sans-serif;
+    padding-inline: max(20px, calc((100vw - 880px) / 2));
+    padding-block: 48px 80px;
+  }
+  code, .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+
+  main { max-width: 880px; margin-inline: auto; }
+
+  h1 {
+    font-size: 1.9rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    margin: 0 0 6px;
+  }
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 1.02rem;
+    margin: 0 0 36px;
+    max-width: 62ch;
+  }
+  h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 48px 0 6px;
+    letter-spacing: -0.01em;
+  }
+  h2 .eyebrow {
+    display: block;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+  p { line-height: 1.6; max-width: 68ch; }
+  .lede { color: var(--text-dim); }
+
+  .legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin: 20px 0 28px;
+    font-size: 0.85rem;
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; color: var(--text-dim); }
+  .swatch { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+  .swatch.amber { background: var(--amber-bg); border: 1.5px solid var(--amber-border); }
+  .swatch.teal { background: var(--teal-bg); border: 1.5px solid var(--teal-border); }
+  .swatch.neutral { background: var(--neutral-bg); border: 1.5px solid var(--neutral-border); }
+
+  figure { margin: 0; }
+  .diagram-frame {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    overflow-x: auto;
+  }
+  svg { max-width: 100%; height: auto; display: block; margin-inline: auto; }
+  figcaption {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin-top: 12px;
+    max-width: 68ch;
+  }
+
+  .stage-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+    margin-top: 18px;
+  }
+  .file-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--neutral-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .file-card.amber { border-left-color: var(--amber-border); }
+  .file-card.teal { border-left-color: var(--teal-border); }
+  .file-card .fname {
+    font-size: 0.88rem;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .file-card.amber .fname { color: var(--amber); }
+  .file-card.teal .fname { color: var(--teal); }
+  .file-card p { margin: 0; font-size: 0.88rem; color: var(--text-dim); line-height: 1.55; }
+  .file-card .tag {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    float: right;
+  }
+
+  .note {
+    background: var(--neutral-bg);
+    border: 1px solid var(--neutral-border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    margin-top: 40px;
+  }
+  .note strong { color: var(--text); }
+</style>
+
+<main>
+  <h1>How the interview-prep system fits together</h1>
+  <p class="subtitle lede">
+    Every script and data file built so far, and how they connect — from the
+    8 markdown source files down to the one decision the router hands back.
+  </p>
+
+  <div class="legend">
+    <span class="legend-item"><span class="swatch amber"></span>an LLM call happens here (Groq or Gemini)</span>
+    <span class="legend-item"><span class="swatch teal"></span>pure deterministic code — no AI involved</span>
+    <span class="legend-item"><span class="swatch neutral"></span>a stored data file</span>
+  </div>
+
+  <figure>
+    <div class="diagram-frame">
+<svg viewBox="0 0 900 760" role="img" aria-label="Diagram showing the corpus files flowing through parsing, difficulty tagging, and prerequisite tagging into tagged_entries.json, which then branches into an embeddings pipeline and the routing graph, while a separate tracking database feeds the routing graph from real study sessions, converging on one decision.">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <style>
+    text { font-family: "Source Sans 3", sans-serif; }
+    .mono { font-family: "JetBrains Mono", monospace; }
+    .lbl { font-size: 12px; fill: currentColor; }
+    .lbl-dim { font-size: 11px; fill: currentColor; opacity: 0.65; }
+    .edge { stroke: currentColor; stroke-width: 1.4; opacity: 0.55; fill: none; marker-end: url(#arrow); }
+    .box-title { font-size: 13px; font-weight: 600; }
+    .box-sub { font-size: 10.5px; opacity: 0.7; }
+  </style>
+
+  <!-- 8 markdown files -->
+  <rect x="330" y="10" width="240" height="46" rx="7" fill="var(--neutral-bg)" stroke="var(--neutral-border)"/>
+  <text x="450" y="30" text-anchor="middle" class="box-title">8 markdown files</text>
+  <text x="450" y="45" text-anchor="middle" class="box-sub mono">oop.md · DBMS.md · OS.md ...</text>
+
+  <line x1="450" y1="56" x2="450" y2="92" class="edge"/>
+  <text x="466" y="78" class="lbl mono" fill="var(--teal)">parse_qa_markdown.py</text>
+
+  <!-- parsed entries -->
+  <rect x="350" y="96" width="200" height="42" rx="7" fill="var(--teal-bg)" stroke="var(--teal-border)"/>
+  <text x="450" y="122" text-anchor="middle" class="box-title" fill="var(--teal)">452 parsed Q&amp;A entries</text>
+
+  <line x1="450" y1="138" x2="450" y2="176" class="edge"/>
+  <text x="466" y="162" class="lbl mono" fill="var(--amber)">tag_difficulty.py</text>
+  <text x="466" y="174" class="lbl-dim">Groq, per-topic batches</text>
+
+  <!-- + difficulty tier -->
+  <rect x="340" y="180" width="220" height="42" rx="7" fill="var(--amber-bg)" stroke="var(--amber-border)"/>
+  <text x="450" y="206" text-anchor="middle" class="box-title" fill="var(--amber)">+ difficulty_tier</text>
+
+  <line x1="450" y1="222" x2="450" y2="264" class="edge"/>
+  <text x="466" y="242" class="lbl mono" fill="var(--amber)">tag_prerequisites.py</text>
+  <text x="466" y="256" class="lbl mono" fill="var(--teal)">+ prereq_graph.py</text>
+
+  <!-- tagged_entries.json (central) -->
+  <rect x="290" y="268" width="320" height="64" rx="8" fill="var(--surface)" stroke="var(--accent-line)" stroke-width="2"/>
+  <text x="450" y="292" text-anchor="middle" class="box-title mono">tagged_entries.json</text>
+  <text x="450" y="308" text-anchor="middle" class="box-sub">503 entries · tier + prerequisites</text>
+  <text x="450" y="322" text-anchor="middle" class="box-sub">the corpus's single source of truth</text>
+
+  <!-- branch left: embeddings -->
+  <path d="M310,332 C260,360 220,370 180,392" class="edge"/>
+  <text x="185" y="378" class="lbl mono" fill="var(--amber)">build_embeddings.py</text>
+  <text x="185" y="390" class="lbl-dim">Gemini</text>
+
+  <rect x="30" y="396" width="260" height="46" rx="7" fill="var(--neutral-bg)" stroke="var(--neutral-border)"/>
+  <text x="160" y="416" text-anchor="middle" class="box-title mono">faiss_index.bin</text>
+  <text x="160" y="431" text-anchor="middle" class="box-sub mono">+ embedding_metadata.json</text>
+
+  <line x1="160" y1="442" x2="160" y2="478" class="edge" stroke-dasharray="4 4"/>
+  <text x="176" y="464" class="lbl-dim">used starting Phase 5</text>
+  <rect x="40" y="482" width="240" height="40" rx="7" fill="none" stroke="var(--neutral-border)" stroke-dasharray="4 4"/>
+  <text x="160" y="506" text-anchor="middle" class="lbl-dim">LLM explanations &amp; quizzes</text>
+
+  <!-- branch right: read directly into routing -->
+  <path d="M590,332 C640,360 680,372 700,392" class="edge"/>
+  <text x="655" y="378" class="lbl-dim">read directly</text>
+
+  <!-- tracking side, independent input -->
+  <rect x="660" y="30" width="200" height="42" rx="7" fill="var(--teal-bg)" stroke="var(--teal-border)"/>
+  <text x="760" y="56" text-anchor="middle" class="box-title mono" fill="var(--teal)">tracking_db.py</text>
+
+  <line x1="760" y1="72" x2="760" y2="108" class="edge"/>
+  <text x="776" y="94" class="lbl mono" fill="var(--teal)">init_db()</text>
+
+  <rect x="670" y="112" width="180" height="42" rx="7" fill="var(--neutral-bg)" stroke="var(--neutral-border)"/>
+  <text x="760" y="138" text-anchor="middle" class="box-title mono">tracking.db</text>
+
+  <line x1="760" y1="154" x2="760" y2="380" class="edge"/>
+  <text x="776" y="200" class="lbl mono" fill="var(--teal)">log_attempt()</text>
+  <text x="776" y="214" class="lbl-dim">every real study</text>
+  <text x="776" y="226" class="lbl-dim">session, over time</text>
+  <text x="776" y="350" class="lbl mono" fill="var(--teal)">get_current_status()</text>
+
+  <!-- routing_graph.py container -->
+  <rect x="290" y="388" width="440" height="168" rx="8" fill="var(--surface)" stroke="var(--border)"/>
+  <text x="310" y="410" class="box-sub mono" fill="var(--text-dim)">routing_graph.py</text>
+
+  <rect x="330" y="422" width="180" height="42" rx="7" fill="var(--teal-bg)" stroke="var(--teal-border)"/>
+  <text x="420" y="448" text-anchor="middle" class="box-title mono" fill="var(--teal)">gather_state()</text>
+
+  <line x1="420" y1="464" x2="420" y2="494" class="edge"/>
+
+  <rect x="330" y="498" width="180" height="42" rx="7" fill="var(--teal-bg)" stroke="var(--teal-border)"/>
+  <text x="420" y="524" text-anchor="middle" class="box-title mono" fill="var(--teal)">decide()</text>
+  <text x="500" y="516" class="lbl-dim">4-bucket priority +</text>
+  <text x="500" y="528" class="lbl-dim">tier/number tiebreak</text>
+
+  <line x1="700" y1="392" x2="430" y2="422" class="edge"/>
+  <line x1="760" y1="380" x2="440" y2="422" class="edge"/>
+
+  <line x1="420" y1="556" x2="420" y2="592" class="edge"/>
+
+  <!-- final decision -->
+  <rect x="300" y="596" width="240" height="54" rx="8" fill="var(--amber-bg)" stroke="var(--accent-line)" stroke-width="2"/>
+  <text x="420" y="620" text-anchor="middle" class="box-title" fill="var(--amber)">Decision</text>
+  <text x="420" y="636" text-anchor="middle" class="box-sub mono">{ action, item }</text>
+
+  <text x="420" y="690" text-anchor="middle" class="lbl-dim">study_new · quiz · review_struggled · review_solved</text>
+</svg>
+    </div>
+    <figcaption>
+      Two independent inputs — the corpus (tagged with difficulty and
+      prerequisites) and the tracker (built up over real study sessions) —
+      converge inside <code>routing_graph.py</code> to produce one decision.
+      The embeddings branch is built but not yet read by anything; that
+      wiring is Phase 5.
+    </figcaption>
+  </figure>
+
+  <h2><span class="eyebrow">Stage 1</span>Building the corpus</h2>
+  <p>Turns 8 hand-written markdown files into one structured, richly-tagged JSON record — the thing every later phase reads from.</p>
+  <div class="stage-grid">
+    <div class="file-card teal">
+      <span class="tag">deterministic</span>
+      <span class="fname">parse_qa_markdown.py</span>
+      <p>Splits each markdown file on its <code>## Q&lt;N&gt;:</code> headings into question/answer pairs. Pure text parsing, no AI.</p>
+    </div>
+    <div class="file-card amber">
+      <span class="tag">Groq</span>
+      <span class="fname">tag_difficulty.py</span>
+      <p>Sends a topic's questions to the LLM together, asking it to sort each into foundational / intermediate / advanced, with reasoning before the answer to keep judgments consistent.</p>
+    </div>
+    <div class="file-card teal">
+      <span class="tag">orchestrator</span>
+      <span class="fname">build_tagged_corpus.py</span>
+      <p>Runs the two files above per topic, in safely-sized batches, saving progress after every batch so a failure never loses work already done.</p>
+    </div>
+    <div class="file-card amber">
+      <span class="tag">Groq</span>
+      <span class="fname">tag_prerequisites.py</span>
+      <p>A second LLM pass: for each question, which other specific questions in the same topic does it depend on? Produces the raw, unvalidated edges.</p>
+    </div>
+    <div class="file-card teal">
+      <span class="tag">deterministic</span>
+      <span class="fname">prereq_graph.py</span>
+      <p>No AI at all. Validates the LLM's edges (drops hallucinated references, self-references, tier violations) and turns the result into an actual study order — with a guaranteed way to detect circular dependencies.</p>
+    </div>
+    <div class="file-card teal">
+      <span class="tag">orchestrator</span>
+      <span class="fname">build_prereq_graph.py</span>
+      <p>Runs the prerequisite pass per topic, validates, and writes the cleaned dependency list onto every entry in <code>tagged_entries.json</code>.</p>
+    </div>
+  </div>
+
+  <h2><span class="eyebrow">Stage 2</span>Making the corpus searchable</h2>
+  <p>Turns each entry into a vector so it can be found by meaning later — built, but nothing downstream reads it yet.</p>
+  <div class="stage-grid">
+    <div class="file-card amber">
+      <span class="tag">Gemini</span>
+      <span class="fname">build_embeddings.py</span>
+      <p>Embeds every question+answer pair, normalizes the vectors, and stores them in a FAISS index alongside a matching metadata file — the retrieval half of RAG, waiting for Phase 5's generation half.</p>
+    </div>
+  </div>
+
+  <h2><span class="eyebrow">Stage 3</span>Tracking real progress</h2>
+  <p>Completely independent of the corpus files above — this is what actually changes every time you study something.</p>
+  <div class="stage-grid">
+    <div class="file-card teal">
+      <span class="tag">deterministic</span>
+      <span class="fname">tracking_db.py</span>
+      <p>An append-only log: every study/quiz attempt gets its own row. "Current status" is just whichever row is most recent for that item — never a separately-maintained value that could drift out of sync.</p>
+    </div>
+  </div>
+
+  <h2><span class="eyebrow">Stage 4</span>Deciding what's next</h2>
+  <p>Where both inputs meet. Reads the corpus's tiers and prerequisites, reads the tracker's real history, and picks one thing to do.</p>
+  <div class="stage-grid">
+    <div class="file-card teal">
+      <span class="tag">deterministic</span>
+      <span class="fname">routing_graph.py</span>
+      <p><code>gather_state()</code> assembles one topic's questions with their live status and readiness; <code>decide()</code> applies the four-bucket priority (struggled → quiz → new → review) with the tier-then-number tiebreak; <code>get_topic_progress()</code> tallies status counts per department. No LLM call anywhere in this file — the routing decision itself is fully deterministic, built entirely on data the earlier stages produced.</p>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>What's still a stub:</strong> the embeddings branch has no reader yet, and the four decision actions (<code>study_new</code>, <code>quiz</code>, <code>review_struggled</code>, <code>review_solved</code>) currently just report themselves — turning them into real generated explanations and quiz questions, grounded in the FAISS index, is exactly what Phase 5 wires up next.
+  </div>
+</main>
